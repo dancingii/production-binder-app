@@ -13,41 +13,36 @@ function App() {
       try {
         const text = e.target.result;
         const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, "text/xml");
-        const sceneElements = xmlDoc.getElementsByTagName("Content");
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        const paragraphs = Array.from(xmlDoc.getElementsByTagName('Paragraph'));
 
         const parsedScenes = [];
+        let currentScene = null;
 
-        for (let i = 0; i < sceneElements.length; i++) {
-          const scene = sceneElements[i];
-          const paragraphs = scene.getElementsByTagName("Paragraph");
+        paragraphs.forEach((para) => {
+          const type = para.getAttribute('Type');
+          const content = para.textContent.trim();
 
-          const content = [];
-          let heading = "";
+          if (!content) return;
 
-          for (let j = 0; j < paragraphs.length; j++) {
-            const p = paragraphs[j];
-            const type = p.getAttribute("Type");
-            const text = p.textContent.trim();
-            if (!text) continue;
-
-            if (type === "Scene Heading" && heading === "") {
-              heading = text;
-            }
-
-            content.push({ type, text });
+          if (type === 'Scene Heading') {
+            if (currentScene) parsedScenes.push(currentScene);
+            currentScene = {
+              heading: content,
+              content: []
+            };
+          } else if (currentScene) {
+            currentScene.content.push({ type, text: content });
           }
+        });
 
-          if (content.length > 0) {
-            parsedScenes.push({ heading, content });
-          }
-        }
+        if (currentScene) parsedScenes.push(currentScene);
 
         setScenes(parsedScenes);
         setCurrentIndex(0);
       } catch (err) {
         console.error("Parse error:", err);
-        alert("Failed to parse file.");
+        alert("Failed to parse .fdx file.");
       }
     };
 
@@ -58,55 +53,52 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
-  const handlePrevious = () => {
+  const handlePrev = () => {
     setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
   };
 
   return (
-    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'Courier, monospace' }}>
-      <h1>Production Binder</h1>
+    <div style={{ padding: '20px', fontFamily: 'monospace' }}>
+      <h1>Scene Viewer</h1>
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
 
       {scenes.length > 0 && (
-        <div
-          style={{
-            width: '800px',
-            height: '800px',
-            overflowY: 'auto',
-            margin: '20px auto',
-            padding: '20px',
-            border: '1px solid #ccc',
-            boxSizing: 'border-box',
-            backgroundColor: '#fdfdfd',
-            textAlign: 'left',
-          }}
-        >
-          <h2>{scenes[currentIndex].heading}</h2>
-          {scenes[currentIndex].content.map((line, idx) => {
-            const { type, text } = line;
-            let style = { margin: '10px 0' };
-
-            if (type === 'Character') {
-              style.textAlign = 'center';
-              style.fontWeight = 'bold';
-            } else if (type === 'Parenthetical') {
-              style.marginLeft = '50px';
-              style.fontStyle = 'italic';
-            } else if (type === 'Dialogue') {
-              style.marginLeft = '100px';
-              style.marginRight = '100px';
-            }
-
-            return (
-              <div key={idx} style={style}>
-                {text}
-              </div>
-            );
-          })}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button onClick={handlePrevious} style={{ marginRight: '10px' }}>Previous</button>
-            <button onClick={handleNext}>Next</button>
+        <div style={{
+          width: '1000px',
+          height: '1000px',
+          margin: '20px 0 20px auto',
+          border: '1px solid #ccc',
+          padding: '20px',
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+        }}>
+          <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
+            {currentIndex + 1}: {scenes[currentIndex].heading}
+          </h2>
+          <div>
+            {scenes[currentIndex].content.map((block, index) => {
+              switch (block.type) {
+                case 'Character':
+                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
+                case 'Dialogue':
+                  return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
+                case 'Parenthetical':
+                  return <p key={index} style={{ marginLeft: '90px', fontStyle: 'italic' }}>({block.text})</p>;
+                case 'Action':
+                  return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
+                default:
+                  return <p key={index}>{block.text}</p>;
+              }
+            })}
           </div>
+        </div>
+      )}
+
+      {scenes.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button onClick={handlePrev}>Previous</button>
+          <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
         </div>
       )}
     </div>
