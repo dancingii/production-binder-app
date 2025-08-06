@@ -59,11 +59,9 @@ function App() {
   };
 
   return (
-    <div style={{ display: 'flex', padding: '20px', fontFamily: 'Courier, monospace' }}>
-      <div>
-        <h1>Production Binder</h1>
-        <input type="file" accept=".fdx" onChange={handleFileUpload} />
-      </div>
+    <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'Courier, monospace' }}>
+      <h1>Production Binder</h1>
+      <input type="file" accept=".fdx" onChange={handleFileUpload} />
 
       {scenes.length > 0 && (
         <div
@@ -71,12 +69,12 @@ function App() {
             width: '1000px',
             height: '1000px',
             overflowY: 'auto',
-            marginLeft: '40px',
+            margin: '20px auto',
             padding: '20px',
             border: '1px solid #ccc',
             boxSizing: 'border-box',
             backgroundColor: '#fdfdfd',
-            textAlign: 'left'
+            textAlign: 'left',
           }}
         >
           <h2>{scenes[currentIndex].heading}</h2>
@@ -101,9 +99,9 @@ function App() {
               </div>
             );
           })}
-          <button onClick={handleNext} style={{ marginTop: '20px' }}>
-            Next Scene
-          </button>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
+            <button onClick={handleNext}>Next Scene</button>
+          </div>
         </div>
       )}
     </div>
