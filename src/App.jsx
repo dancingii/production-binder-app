@@ -67,10 +67,10 @@ function App() {
           {/* Scene Dropdown Box */}
           <div style={{ marginRight: '20px' }}>
             <select
-              style={{ width: '500px', height: '100px', fontFamily: 'monospace' }}
+              style={{ width: '500px', height: '1000px', fontFamily: 'monospace' }}
               onChange={(e) => setCurrentIndex(Number(e.target.value))}
               value={currentIndex}
-              size="5"
+              size="50"
             >
               {scenes.map((scene, index) => (
                 <option key={index} value={index}>
