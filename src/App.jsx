@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 function App() {
-  const [characters, setCharacters] = useState([]);
+  const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleFileUpload = (event) => {
@@ -12,25 +12,34 @@ function App() {
     reader.onload = (e) => {
       try {
         const text = e.target.result;
-
-        // Parse .fdx XML
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, 'text/xml');
-        const elements = xmlDoc.getElementsByTagName('Paragraph');
+        const paragraphs = Array.from(xmlDoc.getElementsByTagName('Paragraph'));
 
-        const charSet = new Set();
+        const parsedScenes = [];
+        let currentScene = null;
 
-        for (let i = 0; i < elements.length; i++) {
-          const elem = elements[i];
-          if (elem.getAttribute('Type') === 'Character') {
-            const name = elem.textContent.trim();
-            if (name) {
-              charSet.add(name);
-            }
+        paragraphs.forEach((para) => {
+          const type = para.getAttribute('Type');
+          const content = para.textContent.trim();
+
+          if (!content) return;
+
+          if (type === 'Scene Heading') {
+            if (currentScene) parsedScenes.push(currentScene);
+            currentScene = {
+              heading: content,
+              content: []
+            };
+          } else if (currentScene) {
+            currentScene.content.push({ type, text: content });
           }
-        }
+        });
 
-        setCharacters(Array.from(charSet));
+        // Push final scene
+        if (currentScene) parsedScenes.push(currentScene);
+
+        setScenes(parsedScenes);
         setCurrentIndex(0);
       } catch (err) {
         console.error("Parse error:", err);
@@ -42,18 +51,42 @@ function App() {
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % characters.length);
+    setCurrentIndex((prev) => (prev + 1) % scenes.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Character Review</h1>
+    <div style={{ padding: '20px', fontFamily: 'monospace' }}>
+      <h1>Scene Viewer</h1>
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
-      {characters.length > 0 && (
-        <>
-          <h2>{characters[currentIndex]}</h2>
-          <button onClick={handleNext}>Next</button>
-        </>
+
+      {scenes.length > 0 && (
+        <div style={{ marginTop: '20px' }}>
+          <h2>{scenes[currentIndex].heading}</h2>
+          <div style={{ whiteSpace: 'pre-wrap' }}>
+            {scenes[currentIndex].content.map((block, index) => {
+              switch (block.type) {
+                case 'Character':
+                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold' }}>{block.text}</p>;
+                case 'Dialogue':
+                  return <p key={index} style={{ marginLeft: '40px' }}>{block.text}</p>;
+                case 'Parenthetical':
+                  return <p key={index} style={{ marginLeft: '30px', fontStyle: 'italic' }}>({block.text})</p>;
+                case 'Action':
+                  return <p key={index}>{block.text}</p>;
+                default:
+                  return <p key={index}>{block.text}</p>;
+              }
+            })}
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={handlePrev}>Previous</button>
+            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+          </div>
+        </div>
       )}
     </div>
   );
