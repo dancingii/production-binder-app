@@ -58,6 +58,10 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
+  };
+
   return (
     <div style={{ textAlign: 'center', padding: '20px', fontFamily: 'Courier, monospace' }}>
       <h1>Production Binder</h1>
@@ -66,8 +70,8 @@ function App() {
       {scenes.length > 0 && (
         <div
           style={{
-            width: '1000px',
-            height: '1000px',
+            width: '800px',
+            height: '800px',
             overflowY: 'auto',
             margin: '20px auto',
             padding: '20px',
@@ -100,7 +104,8 @@ function App() {
             );
           })}
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button onClick={handleNext}>Next Scene</button>
+            <button onClick={handlePrevious} style={{ marginRight: '10px' }}>Previous</button>
+            <button onClick={handleNext}>Next</button>
           </div>
         </div>
       )}
