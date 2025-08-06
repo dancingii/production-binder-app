@@ -19,8 +19,9 @@ function App() {
       preserveOrder: true,           // <— VERY IMPORTANT to preserve all elements in order
     });
 
-    const result = parser.parse(text);
-    const paragraphs = result.FinalDraft.Content.Paragraph;
+    const result = parser.parse(xmlText);  // Already configured with preserveOrder
+    console.log('Parsed XML:', result);
+    setScenes(result);  // or however you want to structure it    
 
     const parsedScenes = [];
     let currentScene = { sceneNumber: 1, elements: [] };
