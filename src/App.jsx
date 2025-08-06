@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { parse } from 'fast-xml-parser';
 
 function App() {
   const [scenes, setScenes] = useState([]);
@@ -11,38 +12,43 @@ function App() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const text = e.target.result;
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(text, 'text/xml');
-        const paragraphs = Array.from(xmlDoc.getElementsByTagName('Paragraph'));
+        const xml = e.target.result;
+        const json = parse(xml, {
+          ignoreAttributes: false,
+          attributeNamePrefix: '',
+          textNodeName: 'text',
+        });
 
-        const parsedScenes = [];
+        const content = json.FinalDraft.Document.Content.Paragraph;
+        const extractedScenes = [];
         let currentScene = null;
+        let sceneCounter = 1;
 
-        paragraphs.forEach((para) => {
-          const type = para.getAttribute('Type');
-          const content = para.textContent.trim();
-
-          if (!content) return;
+        content.forEach((item) => {
+          const type = item.Type;
+          const text = typeof item.Text === 'string' ? item.Text : item.Text?.text || '';
 
           if (type === 'Scene Heading') {
-            if (currentScene) parsedScenes.push(currentScene);
+            if (currentScene) extractedScenes.push(currentScene);
             currentScene = {
-              heading: content,
-              content: []
+              number: sceneCounter++,
+              heading: text,
+              content: [],
             };
           } else if (currentScene) {
-            currentScene.content.push({ type, text: content });
+            currentScene.content.push({ type, text });
           }
         });
 
-        if (currentScene) parsedScenes.push(currentScene);
+        if (currentScene) extractedScenes.push(currentScene);
 
-        setScenes(parsedScenes);
+        console.log('Scene Numbers:', extractedScenes.map(s => s.number)); // log scene numbers
+
+        setScenes(extractedScenes);
         setCurrentIndex(0);
       } catch (err) {
-        console.error("Parse error:", err);
-        alert("Failed to parse .fdx file.");
+        console.error('Parse error:', err);
+        alert('Failed to parse FDX file.');
       }
     };
 
@@ -53,53 +59,58 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
-  const handlePrev = () => {
+  const handlePrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
   };
 
-  return (
-    <div style={{ padding: '20px', fontFamily: 'monospace' }}>
-      <h1>Scene Viewer</h1>
-      <input type="file" accept=".fdx" onChange={handleFileUpload} />
+  const handleSceneJump = (e) => {
+    setCurrentIndex(parseInt(e.target.value));
+  };
 
+  return (
+    <div style={{ padding: '20px' }}>
+      <h1>Production Binder</h1>
+      <input type="file" accept=".fdx" onChange={handleFileUpload} />
       {scenes.length > 0 && (
-        <div style={{
-          width: '800px',
-          height: '800px',
-          margin: '20px auto',
-          border: '1px solid #ccc',
-          padding: '20px',
-          overflowY: 'auto',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-        }}>
-          <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
-            {currentIndex + 1}: {scenes[currentIndex].heading}
-          </h2>
-          <div>
-            {scenes[currentIndex].content.map((block, index) => {
-              switch (block.type) {
-                case 'Character':
-                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
-                case 'Dialogue':
-                  return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
-                case 'Parenthetical':
-                  return <p key={index} style={{ marginLeft: '90px', fontStyle: 'italic' }}>({block.text})</p>;
-                case 'Action':
-                  return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
-                default:
-                  return <p key={index}>{block.text}</p>;
+        <>
+          <div style={{ marginTop: '20px', marginBottom: '10px' }}>
+            <label htmlFor="sceneSelect">Jump to Scene: </label>
+            <select id="sceneSelect" onChange={handleSceneJump} value={currentIndex}>
+              {scenes.map((scene, index) => (
+                <option key={index} value={index}>
+                  {scene.number}: {scene.heading}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div style={{
+            width: '1000px',
+            height: '1000px',
+            overflowY: 'auto',
+            overflowX: 'auto',
+            border: '1px solid #ccc',
+            boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+            padding: '20px',
+            textAlign: 'left'
+          }}>
+            <h2 style={{ whiteSpace: 'nowrap' }}>{scenes[currentIndex].number}: {scenes[currentIndex].heading}</h2>
+            {scenes[currentIndex].content.map((line, idx) => {
+              if (line.type === 'Character') {
+                return <div key={idx} style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '20px' }}>{line.text}</div>;
+              } else if (line.type === 'Dialogue') {
+                return <div key={idx} style={{ margin: '0 100px', marginTop: '10px' }}>{line.text}</div>;
+              } else if (line.type === 'Parenthetical') {
+                return <div key={idx} style={{ fontStyle: 'italic', textAlign: 'center', marginTop: '10px' }}>{line.text}</div>;
+              } else {
+                return <div key={idx} style={{ marginTop: '10px' }}>{line.text}</div>;
               }
             })}
           </div>
-        </div>
-      )}
-
-      {scenes.length > 0 && (
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button onClick={handlePrev}>Previous</button>
-          <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
-        </div>
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={handlePrevious}>Previous</button>
+            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+          </div>
+        </>
       )}
     </div>
   );
