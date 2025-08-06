@@ -63,56 +63,57 @@ function App() {
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
 
       {scenes.length > 0 && (
-        <div style={{
-          width: '1000px',
-          height: '1000px',
-          margin: '20px 0',
-          border: '1px solid #ccc',
-          padding: '20px',
-          overflowY: 'auto',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-          textAlign: 'left',
-        }}>
-          <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
-            {currentIndex + 1}: {scenes[currentIndex].heading}
-          </h2>
-          <div>
-            {scenes[currentIndex].content.map((block, index) => {
-              switch (block.type) {
-                case 'Character':
-                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
-                case 'Dialogue':
-                  return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
-                case 'Parenthetical':
-                  return <p key={index} style={{ textAlign: 'center', fontStyle: 'italic' }}>({block.text})</p>;
-                case 'Action':
-                  return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
-                default:
-                  return <p key={index}>{block.text}</p>;
-              }
-            })}
+        <div style={{ display: 'flex', marginTop: '20px' }}>
+          {/* Scene Dropdown Box */}
+          <div style={{ marginRight: '20px' }}>
+            <select
+              style={{ width: '500px', height: '100px', fontFamily: 'monospace' }}
+              onChange={(e) => setCurrentIndex(Number(e.target.value))}
+              value={currentIndex}
+              size="5"
+            >
+              {scenes.map((scene, index) => (
+                <option key={index} value={index}>
+                  {index + 1}: {scene.heading}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
 
-      {scenes.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '20px', width: '1000px' }}>
-          <select
-            style={{ width: '700px', height: '250px', fontFamily: 'monospace' }}
-            onChange={(e) => setCurrentIndex(Number(e.target.value))}
-            value={currentIndex}
-            size="10"
-          >
-            {scenes.map((scene, index) => (
-              <option key={index} value={index}>
-                {index + 1}: {scene.heading}
-              </option>
-            ))}
-          </select>
-          <div style={{ textAlign: 'right' }}>
-            <button onClick={handlePrev}>Previous</button>
-            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+          {/* Scene Slide Window */}
+          <div style={{
+            width: '1000px',
+            height: '1000px',
+            border: '1px solid #ccc',
+            padding: '20px',
+            overflowY: 'auto',
+            backgroundColor: '#fff',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+            textAlign: 'left',
+          }}>
+            <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
+              {currentIndex + 1}: {scenes[currentIndex].heading}
+            </h2>
+            <div>
+              {scenes[currentIndex].content.map((block, index) => {
+                switch (block.type) {
+                  case 'Character':
+                    return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
+                  case 'Dialogue':
+                    return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
+                  case 'Parenthetical':
+                    return <p key={index} style={{ textAlign: 'center', fontStyle: 'italic' }}>({block.text})</p>;
+                  case 'Action':
+                    return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
+                  default:
+                    return <p key={index}>{block.text}</p>;
+                }
+              })}
+            </div>
+            <div style={{ textAlign: 'right', marginTop: '20px' }}>
+              <button onClick={handlePrev}>Previous</button>
+              <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+            </div>
           </div>
         </div>
       )}
