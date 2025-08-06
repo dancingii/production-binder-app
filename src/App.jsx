@@ -107,7 +107,14 @@ function App() {
     <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
       <h1>Production Binder</h1>
 
-      <input type="file" accept=".fdx" onChange={handleFileUpload} />
+      <input
+  type="file"
+  accept=".fdx"
+  onChange={(e) => {
+    console.log('File selected:', e.target.files[0]);
+    handleFileUpload(e);
+  }}
+/>
 
       <div>
         <input
