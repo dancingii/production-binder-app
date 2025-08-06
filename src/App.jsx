@@ -66,7 +66,7 @@ function App() {
         <div style={{
           width: '1000px',
           height: '1000px',
-          margin: '20px auto',
+          margin: '20px 0',
           border: '1px solid #ccc',
           padding: '20px',
           overflowY: 'auto',
