@@ -36,7 +36,6 @@ function App() {
           }
         });
 
-        // Push final scene
         if (currentScene) parsedScenes.push(currentScene);
 
         setScenes(parsedScenes);
@@ -64,28 +63,42 @@ function App() {
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
 
       {scenes.length > 0 && (
-        <div style={{ marginTop: '20px' }}>
-          <h2>{scenes[currentIndex].heading}</h2>
-          <div style={{ whiteSpace: 'pre-wrap' }}>
+        <div style={{
+          width: '800px',
+          height: '800px',
+          margin: '20px auto',
+          border: '1px solid #ccc',
+          padding: '20px',
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+        }}>
+          <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
+            {currentIndex + 1}: {scenes[currentIndex].heading}
+          </h2>
+          <div>
             {scenes[currentIndex].content.map((block, index) => {
               switch (block.type) {
                 case 'Character':
-                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold' }}>{block.text}</p>;
+                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
                 case 'Dialogue':
-                  return <p key={index} style={{ marginLeft: '40px' }}>{block.text}</p>;
+                  return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
                 case 'Parenthetical':
-                  return <p key={index} style={{ marginLeft: '30px', fontStyle: 'italic' }}>({block.text})</p>;
+                  return <p key={index} style={{ marginLeft: '90px', fontStyle: 'italic' }}>({block.text})</p>;
                 case 'Action':
-                  return <p key={index}>{block.text}</p>;
+                  return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
                 default:
                   return <p key={index}>{block.text}</p>;
               }
             })}
           </div>
-          <div style={{ marginTop: '20px' }}>
-            <button onClick={handlePrev}>Previous</button>
-            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
-          </div>
+        </div>
+      )}
+
+      {scenes.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button onClick={handlePrev}>Previous</button>
+          <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
         </div>
       )}
     </div>
