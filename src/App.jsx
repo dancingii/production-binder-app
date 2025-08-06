@@ -39,7 +39,7 @@ try {
 
   setScenes(scenesArray);
   setCharacters(Array.from(charSet));
-  setCurrentIndex(0); // ✅ THIS LINE NEEDS A SEMICOLON
+  setCurrentIndex(0);
 } catch (err) {
   console.error("Parse error:", err);
   alert("Failed to parse file.");
