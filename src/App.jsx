@@ -16,35 +16,34 @@ export default function App() {
 
     const xml = await file.text();
 
-    try {
-      const parsed = await parseStringPromise(xml);
-      const paras = parsed.FinalDraft.Script[0].Content[0].Paragraph;
-      const scenesArray = [];
-      const charSet = new Set();
-      let current = [];
+   try {
+  const parsed = await parseStringPromise(xml);
+  const paras = parsed.FinalDraft.Script[0].Content[0].Paragraph;
+  const scenesArray = [];
+  const charSet = new Set();
+  let current = [];
 
-      for (const p of paras) {
-        const type = p.$.Type;
-        const txt = p.Text?.[0] || "";
-        if (type === "Scene Heading") {
-          if (current.length) scenesArray.push(current);
-          current = [{ type, text: txt }];
-        } else {
-          current.push({ type, text: txt });
-          if (type === "Character") charSet.add(txt.toUpperCase());
-        }
-      }
-
+  for (const p of paras) {
+    const type = p.$.Type;
+    const txt = p.Text?.[0] || "";
+    if (type === "Scene Heading") {
       if (current.length) scenesArray.push(current);
-
-      setScenes(scenesArray);
-      setCharacters([...charSet]);
-      setCurrentIndex(0);
-      setSelectedCharacter("");
-    } catch (error) {
-      console.error("Parse error:", error);
-      alert("Parsing failed.");
+      current = [{ type, text: txt }];
+    } else {
+      current.push({ type, text: txt });
+      if (type === "Character") charSet.add(txt.toUpperCase());
     }
+  }
+
+  if (current.length) scenesArray.push(current);
+
+  setScenes(scenesArray);
+  setCharacters(Array.from(charSet));
+  setCurrentIndex(0); // ✅ This line must end with a semicolon
+} catch (err) {
+  console.error("Parse error:", err);
+  alert("Failed to parse file.");
+}
   };
 
   const scene = scenes[currentIndex] || [];
