@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 function App() {
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [sceneNumbers, setSceneNumbers] = useState([]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -15,39 +14,40 @@ function App() {
         const text = e.target.result;
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(text, "text/xml");
-
         const sceneElements = xmlDoc.getElementsByTagName("Content");
+
         const parsedScenes = [];
-        const numbers = [];
 
         for (let i = 0; i < sceneElements.length; i++) {
           const scene = sceneElements[i];
-          const elements = scene.getElementsByTagName("Paragraph");
-          const sceneContent = [];
+          const paragraphs = scene.getElementsByTagName("Paragraph");
+
+          const content = [];
           let heading = "";
-          for (let j = 0; j < elements.length; j++) {
-            const el = elements[j];
-            const type = el.getAttribute("Type");
-            const text = el.textContent.trim();
+
+          for (let j = 0; j < paragraphs.length; j++) {
+            const p = paragraphs[j];
+            const type = p.getAttribute("Type");
+            const text = p.textContent.trim();
             if (!text) continue;
 
-            if (type === "Scene Heading") {
+            if (type === "Scene Heading" && heading === "") {
               heading = text;
             }
 
-            sceneContent.push({ type, text });
+            content.push({ type, text });
           }
 
-          if (sceneContent.length > 0) {
-            numbers.push(parsedScenes.length + 1); // scene numbers start at 1
-            parsedScenes.push({ heading, content: sceneContent });
+          if (content.length > 0) {
+            parsedScenes.push({ heading, content });
           }
         }
 
+        const sceneNumbers = parsedScenes.map((_, index) => index + 1);
+        console.log("Scene numbers:", sceneNumbers);
+
         setScenes(parsedScenes);
-        setSceneNumbers(numbers);
         setCurrentIndex(0);
-        console.log("Scene numbers:", numbers);
       } catch (err) {
         console.error("Parse error:", err);
         alert("Failed to parse file.");
@@ -61,23 +61,25 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
-  const handleSceneJump = (e) => {
-    const index = parseInt(e.target.value);
-    if (!isNaN(index)) setCurrentIndex(index);
+  const handleJumpToScene = (e) => {
+    const index = parseInt(e.target.value, 10);
+    if (!isNaN(index)) {
+      setCurrentIndex(index);
+    }
   };
 
   return (
-    <div style={{ display: 'flex', padding: '20px' }}>
+    <div style={{ display: 'flex', padding: '20px', fontFamily: 'Courier, monospace' }}>
       <div>
         <h1>Production Binder</h1>
         <input type="file" accept=".fdx" onChange={handleFileUpload} />
-        {sceneNumbers.length > 0 && (
-          <div style={{ margin: '10px 0' }}>
+        {scenes.length > 0 && (
+          <div style={{ marginTop: '10px' }}>
             <label>Jump to Scene: </label>
-            <select onChange={handleSceneJump} value={currentIndex}>
-              {sceneNumbers.map((num, idx) => (
-                <option key={idx} value={idx}>
-                  {num}
+            <select onChange={handleJumpToScene} value={currentIndex}>
+              {scenes.map((_, index) => (
+                <option key={index} value={index}>
+                  {index + 1}
                 </option>
               ))}
             </select>
@@ -91,42 +93,40 @@ function App() {
             width: '1000px',
             height: '1000px',
             overflowY: 'auto',
-            border: '1px solid #ccc',
-            padding: '20px',
             marginLeft: '40px',
+            padding: '20px',
+            border: '1px solid #ccc',
             boxSizing: 'border-box',
-            fontFamily: 'Courier, monospace',
-            whiteSpace: 'pre-wrap'
+            backgroundColor: '#fdfdfd'
           }}
         >
-          <div>
-            <h2 style={{ whiteSpace: 'nowrap' }}>
-              {currentIndex + 1}. {scenes[currentIndex].heading}
-            </h2>
-            {scenes[currentIndex].content.map((line, idx) => {
-              let style = { margin: '10px 0' };
+          <h2 style={{ whiteSpace: 'nowrap' }}>
+            {currentIndex + 1}. {scenes[currentIndex].heading}
+          </h2>
+          {scenes[currentIndex].content.map((line, idx) => {
+            const { type, text } = line;
+            let style = { margin: '10px 0' };
 
-              if (line.type === "Character") {
-                style.textAlign = "center";
-                style.fontWeight = "bold";
-              } else if (line.type === "Parenthetical") {
-                style.textAlign = "center";
-                style.fontStyle = "italic";
-              } else if (line.type === "Dialogue") {
-                style.marginLeft = "100px";
-                style.marginRight = "100px";
-              }
+            if (type === 'Character') {
+              style.textAlign = 'center';
+              style.fontWeight = 'bold';
+            } else if (type === 'Parenthetical') {
+              style.textAlign = 'center';
+              style.fontStyle = 'italic';
+            } else if (type === 'Dialogue') {
+              style.marginLeft = '100px';
+              style.marginRight = '100px';
+            }
 
-              return (
-                <div key={idx} style={style}>
-                  {line.text}
-                </div>
-              );
-            })}
-            <div style={{ marginTop: '20px' }}>
-              <button onClick={handleNext}>Next Scene</button>
-            </div>
-          </div>
+            return (
+              <div key={idx} style={style}>
+                {text}
+              </div>
+            );
+          })}
+          <button onClick={handleNext} style={{ marginTop: '20px' }}>
+            Next Scene
+          </button>
         </div>
       )}
     </div>
