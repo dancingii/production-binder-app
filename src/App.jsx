@@ -16,17 +16,37 @@ function App() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      try {
-        const xml = event.target.result;
-        const json = xml2js(xml, { compact: true });
+  try {
+    const xml = event.target.result;
+    const json = xml2js(xml, { compact: true });
 
-        console.log("PARSED FDX:", json); // 👈 Add this to inspect structure
+    // ✅ STEP 1: Debug output
+    console.log("🔍 FDX PARSED JSON:", JSON.stringify(json, null, 2));
 
-        const paragraphs = json?.FinalDraft?.Content?.Paragraph;
-        if (!paragraphs || !Array.isArray(paragraphs)) {
-          alert("Unable to parse scenes. FDX structure unexpected.");
-          return;
-        }
+    const content = json?.FinalDraft?.Content;
+
+    if (!content) {
+      alert("Could not find 'Content' in FDX");
+      return;
+    }
+
+    let paragraphs = content.Paragraph;
+
+    // ✅ Log type and text of each paragraph
+    if (!Array.isArray(paragraphs)) paragraphs = [paragraphs];
+
+    console.log("✅ Paragraphs:");
+    paragraphs.forEach((p, i) => {
+      console.log(`[${i}] Type: ${p?._attributes?.Type} | Text: ${p?.Text?._text}`);
+    });
+
+    // You can now move forward with your parsing logic here
+  } catch (err) {
+    console.error("FDX parse error:", err);
+    alert("Failed to load script. Make sure it's a valid .fdx file.");
+  }
+};
+
 
         const scenesList = [];
         let currentScene = [];
