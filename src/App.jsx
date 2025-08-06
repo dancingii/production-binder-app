@@ -1,75 +1,69 @@
-import { Buffer } from 'buffer';
-import process from 'process';
+import React, { useState } from 'react';
+import { XMLParser } from 'fast-xml-parser';
 
-window.Buffer = Buffer;
-window.process = process;
-import React, { useState } from "react";
-import { xml2js } from "xml-js";
-
-export default function App() {
+function App() {
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCharacter, setFilterCharacter] = useState("");
-
-  const getText = (node) => {
-    if (!node) return "";
-    if (typeof node === "string") return node;
-    if (Array.isArray(node)) return node.map(getText).join(" ");
-    if (node._text) return node._text;
-    if (node["#text"]) return node["#text"];
-    return "";
-  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCharacter, setFilterCharacter] = useState('');
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const text = await file.text();
-    const result = xml2js(text, { compact: true });
-    const paragraphs =
-      result.FinalDraft?.Document?.Content?.Paragraph || [];
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+    });
+
+    const result = parser.parse(text);
+    const paragraphs = result.FinalDraft.Content.Paragraph;
 
     const parsedScenes = [];
     let currentScene = { sceneNumber: 1, elements: [] };
     let currentCharacter = null;
+    const allCharacters = new Set();
 
-    for (const el of paragraphs) {
-      const type = el._attributes?.Type;
-      const content = getText(el.Text);
-      if (!type || !content) continue;
+    for (const element of paragraphs) {
+      const type = element['@_Type'];
+      const text = typeof element.Text === 'string'
+        ? element.Text
+        : element.Text?.['#text'] || '';
 
-      if (type === "Scene Heading") {
-        if (currentScene.elements.length) {
+      if (type === 'Scene Heading') {
+        if (currentScene.elements.length > 0) {
           parsedScenes.push(currentScene);
           currentScene = {
             sceneNumber: currentScene.sceneNumber + 1,
             elements: [],
           };
         }
-        currentScene.elements.push({ type: "slugline", text: content });
+        currentScene.elements.push({ type: 'slugline', text });
         currentCharacter = null;
-      } else if (type === "Action" || type === "General") {
-        currentScene.elements.push({ type: "action", text: content });
+      } else if (type === 'Action') {
+        currentScene.elements.push({ type: 'action', text });
         currentCharacter = null;
-      } else if (type === "Character") {
-        currentCharacter = content;
-        currentScene.elements.push({ type: "character", text: content });
-      } else if (type === "Dialogue") {
+      } else if (type === 'Character') {
+        currentCharacter = text;
+        allCharacters.add(currentCharacter);
+        currentScene.elements.push({ type: 'character', text });
+      } else if (type === 'Dialogue') {
         currentScene.elements.push({
-          type: "dialogue",
+          type: 'dialogue',
+          text,
           character: currentCharacter,
-          text: content,
         });
-      } else if (type === "Parenthetical") {
-        currentScene.elements.push({ type: "parenthetical", text: content });
-      } else if (type === "Transition") {
-        currentScene.elements.push({ type: "transition", text: content });
-      } else if (type === "Shot") {
-        currentScene.elements.push({ type: "shot", text: content });
+      } else if (type === 'Parenthetical') {
+        currentScene.elements.push({ type: 'parenthetical', text });
+      } else if (type === 'Transition') {
+        currentScene.elements.push({ type: 'transition', text });
+      } else if (type === 'Shot') {
+        currentScene.elements.push({ type: 'shot', text });
       }
     }
 
-    if (currentScene.elements.length) parsedScenes.push(currentScene);
+    if (currentScene.elements.length > 0) parsedScenes.push(currentScene);
     setScenes(parsedScenes);
     setCurrentIndex(0);
   };
@@ -77,117 +71,135 @@ export default function App() {
   const currentScene = scenes[currentIndex];
 
   const handleSearch = (e) => {
-    const q = e.target.value.toLowerCase();
-    setSearchQuery(q);
-    const idx = scenes.findIndex((sc) =>
-      sc.elements.some((el) =>
-        el.text.toLowerCase().includes(q)
-      )
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    const foundIndex = scenes.findIndex((scene) =>
+      scene.elements.some((el) => el.text?.toLowerCase().includes(query))
     );
-    if (idx >= 0) setCurrentIndex(idx);
+    if (foundIndex !== -1) setCurrentIndex(foundIndex);
   };
 
   const nextScene = () => {
-    if (currentIndex < scenes.length - 1)
-      setCurrentIndex(currentIndex + 1);
+    if (currentIndex < scenes.length - 1) setCurrentIndex(currentIndex + 1);
   };
+
   const prevScene = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
   const characterOptions = Array.from(
     new Set(
-      scenes.flatMap((sc) =>
-        sc.elements
-          .filter((el) => el.type === "character")
+      scenes.flatMap((scene) =>
+        scene.elements
+          .filter((el) => el.type === 'character')
           .map((el) => el.text)
       )
     )
   );
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Courier New, monospace" }}>
-      <h1>Upload .fdx Script</h1>
+    <div style={{ padding: '2rem', fontFamily: 'Courier New, monospace' }}>
+      <h1>Upload Final Draft Script (.fdx)</h1>
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
+      <br />
+      <br />
+
       {scenes.length > 0 && (
         <>
-          <div style={{ margin: "1rem 0" }}>
-            <input
-              type="text"
-              placeholder="Search scenes..."
-              value={searchQuery}
-              onChange={handleSearch}
-              style={{
-                padding: "6px",
-                marginRight: "8px",
-                width: "260px",
-              }}
-            />
-            <select
-              value={filterCharacter}
-              onChange={(e) =>
-                setFilterCharacter(e.target.value)
-              }
-            >
-              <option value="">All Characters</option>
-              {characterOptions.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <input
+            type="text"
+            placeholder="Search scenes..."
+            value={searchQuery}
+            onChange={handleSearch}
+            style={{ padding: '8px', marginRight: '1rem', width: '300px' }}
+          />
+
+          <select
+            value={filterCharacter}
+            onChange={(e) => setFilterCharacter(e.target.value)}
+            style={{ padding: '8px' }}
+          >
+            <option value="">Show all characters</option>
+            {characterOptions.map((name, idx) => (
+              <option key={idx} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+
           <div
             style={{
-              border: "1px solid #ccc",
-              padding: "1rem",
-              background: "#f9f9f9",
-              minHeight: "300px",
+              border: '1px solid #ccc',
+              padding: '1rem',
+              marginTop: '1rem',
+              background: '#f9f9f9',
+              minHeight: '300px',
             }}
           >
-            {currentScene.elements
-              .filter((el) =>
-                filterCharacter
-                  ? el.type === "dialogue"
-                    ? el.character === filterCharacter
-                    : el.type === "character"
-                    ? el.text === filterCharacter
-                    : true
-                  : true
+            {currentScene?.elements.map((el, idx) => {
+              if (
+                filterCharacter &&
+                el.type === 'dialogue' &&
+                el.character !== filterCharacter
               )
-              .map((el, idx) => (
-                <div key={idx} style={{ marginBottom: "0.6rem" }}>
-                  <span
-                    style={{
-                      ...(el.type === "slugline" && {
-                        fontWeight: "bold",
-                      }),
-                      ...(el.type === "character" && {
-                        textAlign: "center",
-                        fontWeight: "bold",
-                      }),
-                      ...(el.type === "dialogue" && {
-                        textAlign: "center",
-                        margin: "0 3rem",
-                      }),
-                      ...(el.type === "action" && {
-                        marginLeft: "2rem",
-                      }),
-                    }}
-                  >
-                    {el.text}
-                  </span>
+                return null;
+
+              if (
+                filterCharacter &&
+                el.type === 'character' &&
+                el.text !== filterCharacter
+              )
+                return null;
+
+              const styleMap = {
+                slugline: { fontWeight: 'bold', textTransform: 'uppercase' },
+                action: { marginLeft: '2rem', marginBottom: '0.5rem' },
+                character: {
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  marginTop: '1.5rem',
+                },
+                dialogue: {
+                  textAlign: 'center',
+                  marginLeft: '3rem',
+                  marginRight: '3rem',
+                },
+                parenthetical: {
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                  color: '#555',
+                },
+                transition: {
+                  textAlign: 'right',
+                  textTransform: 'uppercase',
+                  fontWeight: 'bold',
+                },
+                shot: {
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase',
+                  color: '#333',
+                },
+              };
+
+              return (
+                <div key={idx} style={styleMap[el.type]}>
+                  {el.text}
                 </div>
-              ))}
+              );
+            })}
           </div>
+
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '1rem',
+              width: '320px',
             }}
           >
             <button onClick={prevScene} disabled={currentIndex === 0}>
-              ← Prev
+              ⟵ Previous
             </button>
             <span>
               Scene {currentIndex + 1} of {scenes.length}
@@ -196,7 +208,7 @@ export default function App() {
               onClick={nextScene}
               disabled={currentIndex === scenes.length - 1}
             >
-              Next →
+              Next ⟶
             </button>
           </div>
         </>
@@ -204,3 +216,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
