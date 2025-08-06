@@ -4,155 +4,90 @@ import { XMLParser } from 'fast-xml-parser';
 function App() {
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCharacter, setFilterCharacter] = useState('');
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    const reader = new FileReader();
+    if (!file) return;
 
+    if (!file.name.endsWith('.fdx')) {
+      alert('Please upload a valid .fdx file.');
+      return;
+    }
+
+    const reader = new FileReader();
     reader.onload = (event) => {
+      const xmlContent = event.target.result;
+      console.log('File loaded:', xmlContent.slice(0, 300)); // Log part of the file for debugging
+
       try {
         const parser = new XMLParser({
           ignoreAttributes: false,
           attributeNamePrefix: '',
         });
-        const xml = parser.parse(event.target.result);
 
-        const paragraphs =
-          xml?.FinalDraft?.Content?.Script?.Paragraph || [];
+        const json = parser.parse(xmlContent);
+        const script = json.FinalDraft;
+        const content = script.Content;
+        const paragraphs = Array.isArray(content.Paragraph) ? content.Paragraph : [content.Paragraph];
 
-        // Normalize single vs array
-        const paragraphList = Array.isArray(paragraphs)
-          ? paragraphs
-          : [paragraphs];
+        const sceneList = [];
 
-        const extractedScenes = [];
         let currentScene = null;
 
-        for (const p of paragraphList) {
-          const type = p.Type;
-          const textContent = p.Text || '';
+        paragraphs.forEach((para) => {
+          const type = para.Type;
+          const text = para.Text || '';
 
           if (type === 'Scene Heading') {
-            if (currentScene) {
-              extractedScenes.push(currentScene);
-            }
-            currentScene = {
-              heading: textContent,
-              content: [],
-              characters: new Set(),
-            };
+            if (currentScene) sceneList.push(currentScene);
+            currentScene = { heading: text, content: [] };
           } else if (currentScene) {
-            currentScene.content.push({ type, text: textContent });
-
-            if (type === 'Character') {
-              currentScene.characters.add(textContent.trim().toUpperCase());
-            }
+            currentScene.content.push({ type, text });
           }
-        }
+        });
 
-        if (currentScene) {
-          extractedScenes.push(currentScene);
-        }
-
-        // Flatten character sets and assign to scene
-        const cleanedScenes = extractedScenes.map((scene) => ({
-          ...scene,
-          characters: Array.from(scene.characters),
-        }));
-
-        setScenes(cleanedScenes);
+        if (currentScene) sceneList.push(currentScene);
+        setScenes(sceneList);
         setCurrentIndex(0);
       } catch (err) {
+        console.error('Error parsing XML:', err);
         alert('Failed to load script. Make sure it\'s a valid .fdx file.');
-        console.error('FDX parse error:', err);
       }
     };
 
-    if (file) {
-      reader.readAsText(file);
-    }
+    reader.readAsText(file);
   };
 
-  const filteredScenes = scenes.filter((scene) => {
-    const matchesSearch = scene.content.some((p) =>
-      p.text.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    const matchesCharacter =
-      !filterCharacter ||
-      scene.characters.includes(filterCharacter.trim().toUpperCase());
-
-    return matchesSearch && matchesCharacter;
-  });
-
-  const currentScene = filteredScenes[currentIndex] || {
-    heading: 'No scenes found.',
-    content: [],
-  };
-
-  const handleNext = () => {
-    if (currentIndex < filteredScenes.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
+  const currentScene = scenes[currentIndex];
 
   return (
-    <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
       <h1>Production Binder</h1>
-
-      <input
-  type="file"
-  accept=".fdx"
-  onChange={(e) => {
-    console.log('File selected:', e.target.files[0]);
-    handleFileUpload(e);
-  }}
-/>
-
-      <div>
-        <input
-          type="text"
-          placeholder="Search scene text..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ width: '100%', margin: '0.5rem 0', padding: '0.5rem' }}
-        />
-        <input
-          type="text"
-          placeholder="Filter by character..."
-          value={filterCharacter}
-          onChange={(e) => setFilterCharacter(e.target.value)}
-          style={{ width: '100%', margin: '0.5rem 0', padding: '0.5rem' }}
-        />
-      </div>
-
-      <div style={{ border: '1px solid #ccc', padding: '1rem', minHeight: '300px' }}>
-        <h2>{currentScene.heading}</h2>
-        {currentScene.content.map((p, idx) => (
-          <p key={idx}>
-            <strong>{p.type}:</strong> {p.text}
-          </p>
-        ))}
-      </div>
-
-      <div style={{ marginTop: '1rem' }}>
-        <button onClick={handlePrevious} disabled={currentIndex === 0}>
-          Previous
-        </button>
-        <span style={{ margin: '0 1rem' }}>
-          Scene {filteredScenes.length === 0 ? 0 : currentIndex + 1} of {filteredScenes.length}
-        </span>
-        <button onClick={handleNext} disabled={currentIndex >= filteredScenes.length - 1}>
-          Next
-        </button>
-      </div>
+      <input type="file" accept=".fdx" onChange={handleFileUpload} />
+      {scenes.length > 0 && (
+        <div style={{ marginTop: '20px' }}>
+          <h2>{currentScene.heading}</h2>
+          <div>
+            {currentScene.content.map((line, index) => (
+              <p key={index} style={{ margin: '4px 0' }}>
+                <strong>{line.type}:</strong> {line.text}
+              </p>
+            ))}
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={() => setCurrentIndex((i) => Math.max(i - 1, 0))} disabled={currentIndex === 0}>
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentIndex((i) => Math.min(i + 1, scenes.length - 1))}
+              disabled={currentIndex === scenes.length - 1}
+              style={{ marginLeft: '10px' }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
