@@ -12,15 +12,32 @@ function App() {
     reader.onload = (e) => {
       try {
         const text = e.target.result;
-        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-        const charSet = new Set(lines);
+
+        // Parse .fdx XML
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, 'text/xml');
+        const elements = xmlDoc.getElementsByTagName('Paragraph');
+
+        const charSet = new Set();
+
+        for (let i = 0; i < elements.length; i++) {
+          const elem = elements[i];
+          if (elem.getAttribute('Type') === 'Character') {
+            const name = elem.textContent.trim();
+            if (name) {
+              charSet.add(name);
+            }
+          }
+        }
+
         setCharacters(Array.from(charSet));
         setCurrentIndex(0);
       } catch (err) {
         console.error("Parse error:", err);
-        alert("Failed to parse file.");
+        alert("Failed to parse .fdx file.");
       }
     };
+
     reader.readAsText(file);
   };
 
@@ -31,7 +48,7 @@ function App() {
   return (
     <div style={{ padding: '20px' }}>
       <h1>Character Review</h1>
-      <input type="file" accept=".txt" onChange={handleFileUpload} />
+      <input type="file" accept=".fdx" onChange={handleFileUpload} />
       {characters.length > 0 && (
         <>
           <h2>{characters[currentIndex]}</h2>
