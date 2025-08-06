@@ -14,7 +14,9 @@ function App() {
     const text = await file.text();
     const parser = new XMLParser({
       ignoreAttributes: false,
-      attributeNamePrefix: '@_',
+      attributeNamePrefix: '',       // Keeps attribute names clean
+      textNodeName: 'text',          // Ensures text nodes aren't renamed
+      preserveOrder: true,           // <— VERY IMPORTANT to preserve all elements in order
     });
 
     const result = parser.parse(text);
