@@ -8,43 +8,46 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file?.name?.endsWith(".fdx")) {
-      alert("Upload a valid .fdx file.");
-      return;
-    }
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const xml = await file.text();
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    try {
+      const xml = event.target.result;
+      const parsed = await parseStringPromise(xml);
+      const paras = parsed.FinalDraft.Script[0].Content[0].Paragraph;
 
-try {
-  const parsed = await parseStringPromise(xml);
-  const paras = parsed.FinalDraft.Script[0].Content[0].Paragraph;
-  const scenesArray = [];
-  const charSet = new Set();
-  let current = [];
+      const scenesArray = [];
+      const charSet = new Set();
+      let current = [];
 
-  for (const p of paras) {
-    const type = p.$.Type;
-    const txt = p.Text?.[0] || "";
-    if (type === "Scene Heading") {
+      for (const p of paras) {
+        const type = p.$.Type;
+        const txt = p.Text?.[0] || "";
+
+        if (type === "Scene Heading") {
+          if (current.length) scenesArray.push(current);
+          current = [{ type, text: txt }];
+        } else {
+          current.push({ type, text: txt });
+          if (type === "Character") charSet.add(txt.toUpperCase());
+        }
+      }
+
       if (current.length) scenesArray.push(current);
-      current = [{ type, text: txt }];
-    } else {
-      current.push({ type, text: txt });
-      if (type === "Character") charSet.add(txt.toUpperCase());
+
+      setScenes(scenesArray);
+      setCharacters(Array.from(charSet));
+      setCurrentIndex(0); // ✅ THIS SEMICOLON IS CRITICAL
+    } catch (err) {
+      console.error("Parse error:", err);
+      alert("Failed to parse file.");
     }
-  }
-
-  if (current.length) scenesArray.push(current);
-
-  setScenes(scenesArray);
-  setCharacters(Array.from(charSet));
-  setCurrentIndex(0);
-} catch (err) {
-  console.error("Parse error:", err);
-  alert("Failed to parse file.");
-}
   };
+
+  reader.readAsText(file);
+};
 
   const scene = scenes[currentIndex] || [];
 
