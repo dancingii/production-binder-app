@@ -47,7 +47,6 @@ function App() {
   }
 };
 
-
         const scenesList = [];
         let currentScene = [];
 
