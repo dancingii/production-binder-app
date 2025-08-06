@@ -96,7 +96,7 @@ function App() {
       )}
 
       {scenes.length > 0 && (
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <div style={{ textAlign: 'right', marginTop: '20px', width: '1000px' }}>
           <button onClick={handlePrev}>Previous</button>
           <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
         </div>
