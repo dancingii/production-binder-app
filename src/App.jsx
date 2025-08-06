@@ -63,25 +63,25 @@ function App() {
       <input type="file" accept=".fdx" onChange={handleFileUpload} />
 
       {scenes.length > 0 && (
-        <>
-          <div style={{ display: 'flex', marginTop: '20px' }}>
-            {/* Scene Dropdown Box */}
-            <div style={{ marginRight: '20px' }}>
-              <select
-                style={{ width: '500px', height: '1000px', fontFamily: 'monospace' }}
-                onChange={(e) => setCurrentIndex(Number(e.target.value))}
-                value={currentIndex}
-                size="50"
-              >
-                {scenes.map((scene, index) => (
-                  <option key={index} value={index}>
-                    {index + 1}: {scene.heading}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div style={{ display: 'flex', marginTop: '20px' }}>
+          {/* Dropdown */}
+          <div style={{ marginRight: '20px' }}>
+            <select
+              style={{ width: '500px', height: '1000px', fontFamily: 'monospace' }}
+              onChange={(e) => setCurrentIndex(Number(e.target.value))}
+              value={currentIndex}
+              size="50"
+            >
+              {scenes.map((scene, index) => (
+                <option key={index} value={index}>
+                  {index + 1}: {scene.heading}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Scene Slide Window */}
+          {/* Slide window and nav buttons container */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{
               width: '1000px',
               height: '1000px',
@@ -124,14 +124,14 @@ function App() {
                 })}
               </div>
             </div>
-          </div>
 
-          {/* Moved navigation here */}
-          <div style={{ textAlign: 'right', marginTop: '20px' }}>
-            <button onClick={handlePrev}>Previous</button>
-            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+            {/* Nav buttons aligned to slide window */}
+            <div style={{ textAlign: 'right', marginTop: '10px' }}>
+              <button onClick={handlePrev}>Previous</button>
+              <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
