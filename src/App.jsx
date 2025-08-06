@@ -72,7 +72,7 @@ function App() {
           overflowY: 'auto',
           backgroundColor: '#fff',
           boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-          float: 'left',
+          textAlign: 'left'
         }}>
           <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
             {currentIndex + 1}: {scenes[currentIndex].heading}
@@ -81,13 +81,29 @@ function App() {
             {scenes[currentIndex].content.map((block, index) => {
               switch (block.type) {
                 case 'Character':
-                  return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
+                  return (
+                    <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>
+                      {block.text}
+                    </p>
+                  );
                 case 'Dialogue':
-                  return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
+                  return (
+                    <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>
+                      {block.text}
+                    </p>
+                  );
                 case 'Parenthetical':
-                  return <p key={index} style={{ textAlign: 'center', fontStyle: 'italic' }}>({block.text})</p>; // CHANGED HERE
+                  return (
+                    <p key={index} style={{ textAlign: 'center', fontStyle: 'italic', margin: '10px 0' }}>
+                      ({block.text})
+                    </p>
+                  );
                 case 'Action':
-                  return <p key={index} style={{ textAlign: 'left' }}>{block.text}</p>;
+                  return (
+                    <p key={index} style={{ textAlign: 'left' }}>
+                      {block.text}
+                    </p>
+                  );
                 default:
                   return <p key={index}>{block.text}</p>;
               }
@@ -97,7 +113,7 @@ function App() {
       )}
 
       {scenes.length > 0 && (
-        <div style={{ textAlign: 'right', clear: 'both', marginTop: '20px' }}>
+        <div style={{ textAlign: 'right', marginTop: '20px', width: '1000px' }}>
           <button onClick={handlePrev}>Previous</button>
           <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
         </div>
