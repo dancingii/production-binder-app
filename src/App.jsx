@@ -43,9 +43,6 @@ function App() {
           }
         }
 
-        const sceneNumbers = parsedScenes.map((_, index) => index + 1);
-        console.log("Scene numbers:", sceneNumbers);
-
         setScenes(parsedScenes);
         setCurrentIndex(0);
       } catch (err) {
@@ -61,30 +58,11 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
-  const handleJumpToScene = (e) => {
-    const index = parseInt(e.target.value, 10);
-    if (!isNaN(index)) {
-      setCurrentIndex(index);
-    }
-  };
-
   return (
     <div style={{ display: 'flex', padding: '20px', fontFamily: 'Courier, monospace' }}>
       <div>
         <h1>Production Binder</h1>
         <input type="file" accept=".fdx" onChange={handleFileUpload} />
-        {scenes.length > 0 && (
-          <div style={{ marginTop: '10px' }}>
-            <label>Jump to Scene: </label>
-            <select onChange={handleJumpToScene} value={currentIndex}>
-              {scenes.map((_, index) => (
-                <option key={index} value={index}>
-                  {index + 1}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
 
       {scenes.length > 0 && (
@@ -97,12 +75,11 @@ function App() {
             padding: '20px',
             border: '1px solid #ccc',
             boxSizing: 'border-box',
-            backgroundColor: '#fdfdfd'
+            backgroundColor: '#fdfdfd',
+            textAlign: 'left'
           }}
         >
-          <h2 style={{ whiteSpace: 'nowrap' }}>
-            {currentIndex + 1}. {scenes[currentIndex].heading}
-          </h2>
+          <h2>{scenes[currentIndex].heading}</h2>
           {scenes[currentIndex].content.map((line, idx) => {
             const { type, text } = line;
             let style = { margin: '10px 0' };
@@ -111,7 +88,7 @@ function App() {
               style.textAlign = 'center';
               style.fontWeight = 'bold';
             } else if (type === 'Parenthetical') {
-              style.textAlign = 'center';
+              style.marginLeft = '50px';
               style.fontStyle = 'italic';
             } else if (type === 'Dialogue') {
               style.marginLeft = '100px';
