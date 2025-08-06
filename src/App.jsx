@@ -1,132 +1,130 @@
 import React, { useState } from 'react';
-import { xml2js } from 'xml-js';
+import { parseStringPromise } from 'xml2js';
+import './App.css';
 
 function App() {
-  const [scenes, setScenes] = useState([]);
+  const [scriptData, setScriptData] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [characters, setCharacters] = useState([]);
-  const [highlighted, setHighlighted] = useState('');
+  const [selectedCharacter, setSelectedCharacter] = useState('');
 
-  const handleFile = (e) => {
-    const file = e.target.files[0];
-    if (!file || !file.name.endsWith('.fdx')) {
-      alert("Please upload a valid .fdx file.");
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file.name.endsWith('.fdx')) {
+      alert('Please upload a valid .fdx (Final Draft) file.');
       return;
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-  try {
-    const xml = event.target.result;
-    const json = xml2js(xml, { compact: true });
+    reader.onload = async (e) => {
+      const xmlText = e.target.result;
+      try {
+        const parsed = await parseStringPromise(xmlText);
+        const scriptElements = parsed.FinalDraft.Script[0.Content[0].Paragraph];
 
-    // ✅ STEP 1: Debug output
-    console.log("🔍 FDX PARSED JSON:", JSON.stringify(json, null, 2));
-
-    const content = json?.FinalDraft?.Content;
-
-    if (!content) {
-      alert("Could not find 'Content' in FDX");
-      return;
-    }
-
-    let paragraphs = content.Paragraph;
-
-    // ✅ Log type and text of each paragraph
-    if (!Array.isArray(paragraphs)) paragraphs = [paragraphs];
-
-    console.log("✅ Paragraphs:");
-    paragraphs.forEach((p, i) => {
-      console.log(`[${i}] Type: ${p?._attributes?.Type} | Text: ${p?.Text?._text}`);
-    });
-
-    // You can now move forward with your parsing logic here
-  } catch (err) {
-    console.error("FDX parse error:", err);
-    alert("Failed to load script. Make sure it's a valid .fdx file.");
-  }
-};
-
-        const scenesList = [];
+        const scenes = [];
+        const charSet = new Set();
         let currentScene = [];
 
-        const charSet = new Set();
-
-        for (const para of paragraphs) {
-          const type = para._attributes?.Type;
-          const text = para.Text?._text?.trim() || '';
-
-          if (!text) continue;
+        for (const element of scriptElements) {
+          const type = element.$.Type;
+          const text = element.Text?.[0] || '';
 
           if (type === 'Scene Heading') {
-            if (currentScene.length > 0) {
-              scenesList.push(currentScene);
-              currentScene = [];
+            if (currentScene.length) scenes.push(currentScene);
+            currentScene = [{ type, text }];
+          } else {
+            currentScene.push({ type, text });
+            if (type === 'Character') {
+              charSet.add(text.toUpperCase());
             }
           }
-
-          if (type === 'Character') {
-            charSet.add(text);
-          }
-
-          currentScene.push({ type, text });
         }
 
-        if (currentScene.length > 0) scenesList.push(currentScene);
+        if (currentScene.length) {
+          scenes.push(currentScene);
+        }
 
-        setScenes(scenesList);
+        setScriptData(scenes);
         setCharacters(Array.from(charSet));
         setCurrentIndex(0);
       } catch (err) {
-        console.error("Parse error:", err);
-        alert("Failed to parse file.");
+        console.error('Parse error:', err);
+        alert('Failed to parse file.');
       }
     };
 
     reader.readAsText(file);
   };
 
-  const currentScene = scenes[currentIndex] || [];
+  const renderScene = (scene) => {
+    return scene.map((item, index) => {
+      if (item.type === 'Character') {
+        const isHighlighted = item.text.toUpperCase() === selectedCharacter;
+        return (
+          <div key={index} style={{ fontWeight: isHighlighted ? 'bold' : 'normal', marginTop: '1em' }}>
+            {item.text}
+          </div>
+        );
+      }
+
+      if (item.type === 'Dialogue') {
+        return (
+          <div key={index} style={{ marginLeft: '2em', marginBottom: '1em' }}>
+            {item.text}
+          </div>
+        );
+      }
+
+      if (item.type === 'Scene Heading') {
+        return (
+          <div key={index} style={{ fontWeight: 'bold', textDecoration: 'underline', marginTop: '2em' }}>
+            {item.text}
+          </div>
+        );
+      }
+
+      return (
+        <div key={index} style={{ marginLeft: '1em' }}>
+          {item.text}
+        </div>
+      );
+    });
+  };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div className="App" style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
       <h1>Production Binder</h1>
-      <input type="file" accept=".fdx" onChange={handleFile} />
 
-      {scenes.length > 0 && (
-        <>
-          <div style={{ marginTop: 20 }}>
-            <button onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}>⬅️ Previous</button>
-            <button onClick={() => setCurrentIndex(Math.min(scenes.length - 1, currentIndex + 1))}>Next ➡️</button>
+      <input type="file" accept=".fdx" onChange={handleFileUpload} />
+      {scriptData.length > 0 && (
+        <div style={{ marginTop: '2rem' }}>
+          <div style={{ marginBottom: '1rem' }}>
+            <button onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}>⬅ Previous</button>
+            <button onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, scriptData.length - 1))}>Next ➡</button>
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div>
             <label>
-              Highlight Character:{" "}
-              <select value={highlighted} onChange={(e) => setHighlighted(e.target.value)}>
+              Highlight Character:&nbsp;
+              <select
+                value={selectedCharacter}
+                onChange={(e) => setSelectedCharacter(e.target.value)}
+              >
                 <option value="">-- None --</option>
                 {characters.map((char) => (
-                  <option key={char} value={char}>{char}</option>
+                  <option key={char} value={char}>
+                    {char}
+                  </option>
                 ))}
               </select>
             </label>
           </div>
 
-          <div style={{ marginTop: 20 }}>
-            {currentScene.map((line, idx) => (
-              <div
-                key={idx}
-                style={{
-                  fontWeight: line.type === 'Character' && line.text === highlighted ? 'bold' : 'normal',
-                  fontStyle: line.type === 'Parenthetical' ? 'italic' : 'normal',
-                  marginBottom: 5
-                }}
-              >
-                {line.text}
-              </div>
-            ))}
+          <div style={{ marginTop: '2rem', whiteSpace: 'pre-wrap' }}>
+            {renderScene(scriptData[currentIndex])}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
