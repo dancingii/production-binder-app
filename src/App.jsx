@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { parse } from 'fast-xml-parser';
 
 function App() {
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sceneNumbers, setSceneNumbers] = useState([]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -12,43 +12,45 @@ function App() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const xml = e.target.result;
-        const json = parse(xml, {
-          ignoreAttributes: false,
-          attributeNamePrefix: '',
-          textNodeName: 'text',
-        });
+        const text = e.target.result;
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "text/xml");
 
-        const content = json.FinalDraft.Document.Content.Paragraph;
-        const extractedScenes = [];
-        let currentScene = null;
-        let sceneCounter = 1;
+        const sceneElements = xmlDoc.getElementsByTagName("Content");
+        const parsedScenes = [];
+        const numbers = [];
 
-        content.forEach((item) => {
-          const type = item.Type;
-          const text = typeof item.Text === 'string' ? item.Text : item.Text?.text || '';
+        for (let i = 0; i < sceneElements.length; i++) {
+          const scene = sceneElements[i];
+          const elements = scene.getElementsByTagName("Paragraph");
+          const sceneContent = [];
+          let heading = "";
+          for (let j = 0; j < elements.length; j++) {
+            const el = elements[j];
+            const type = el.getAttribute("Type");
+            const text = el.textContent.trim();
+            if (!text) continue;
 
-          if (type === 'Scene Heading') {
-            if (currentScene) extractedScenes.push(currentScene);
-            currentScene = {
-              number: sceneCounter++,
-              heading: text,
-              content: [],
-            };
-          } else if (currentScene) {
-            currentScene.content.push({ type, text });
+            if (type === "Scene Heading") {
+              heading = text;
+            }
+
+            sceneContent.push({ type, text });
           }
-        });
 
-        if (currentScene) extractedScenes.push(currentScene);
+          if (sceneContent.length > 0) {
+            numbers.push(parsedScenes.length + 1); // scene numbers start at 1
+            parsedScenes.push({ heading, content: sceneContent });
+          }
+        }
 
-        console.log('Scene Numbers:', extractedScenes.map(s => s.number)); // log scene numbers
-
-        setScenes(extractedScenes);
+        setScenes(parsedScenes);
+        setSceneNumbers(numbers);
         setCurrentIndex(0);
+        console.log("Scene numbers:", numbers);
       } catch (err) {
-        console.error('Parse error:', err);
-        alert('Failed to parse FDX file.');
+        console.error("Parse error:", err);
+        alert("Failed to parse file.");
       }
     };
 
@@ -59,58 +61,73 @@ function App() {
     setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
-  const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
-  };
-
   const handleSceneJump = (e) => {
-    setCurrentIndex(parseInt(e.target.value));
+    const index = parseInt(e.target.value);
+    if (!isNaN(index)) setCurrentIndex(index);
   };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Production Binder</h1>
-      <input type="file" accept=".fdx" onChange={handleFileUpload} />
-      {scenes.length > 0 && (
-        <>
-          <div style={{ marginTop: '20px', marginBottom: '10px' }}>
-            <label htmlFor="sceneSelect">Jump to Scene: </label>
-            <select id="sceneSelect" onChange={handleSceneJump} value={currentIndex}>
-              {scenes.map((scene, index) => (
-                <option key={index} value={index}>
-                  {scene.number}: {scene.heading}
+    <div style={{ display: 'flex', padding: '20px' }}>
+      <div>
+        <h1>Production Binder</h1>
+        <input type="file" accept=".fdx" onChange={handleFileUpload} />
+        {sceneNumbers.length > 0 && (
+          <div style={{ margin: '10px 0' }}>
+            <label>Jump to Scene: </label>
+            <select onChange={handleSceneJump} value={currentIndex}>
+              {sceneNumbers.map((num, idx) => (
+                <option key={idx} value={idx}>
+                  {num}
                 </option>
               ))}
             </select>
           </div>
-          <div style={{
+        )}
+      </div>
+
+      {scenes.length > 0 && (
+        <div
+          style={{
             width: '1000px',
             height: '1000px',
             overflowY: 'auto',
-            overflowX: 'auto',
             border: '1px solid #ccc',
-            boxShadow: '0 0 10px rgba(0,0,0,0.2)',
             padding: '20px',
-            textAlign: 'left'
-          }}>
-            <h2 style={{ whiteSpace: 'nowrap' }}>{scenes[currentIndex].number}: {scenes[currentIndex].heading}</h2>
+            marginLeft: '40px',
+            boxSizing: 'border-box',
+            fontFamily: 'Courier, monospace',
+            whiteSpace: 'pre-wrap'
+          }}
+        >
+          <div>
+            <h2 style={{ whiteSpace: 'nowrap' }}>
+              {currentIndex + 1}. {scenes[currentIndex].heading}
+            </h2>
             {scenes[currentIndex].content.map((line, idx) => {
-              if (line.type === 'Character') {
-                return <div key={idx} style={{ textAlign: 'center', fontWeight: 'bold', marginTop: '20px' }}>{line.text}</div>;
-              } else if (line.type === 'Dialogue') {
-                return <div key={idx} style={{ margin: '0 100px', marginTop: '10px' }}>{line.text}</div>;
-              } else if (line.type === 'Parenthetical') {
-                return <div key={idx} style={{ fontStyle: 'italic', textAlign: 'center', marginTop: '10px' }}>{line.text}</div>;
-              } else {
-                return <div key={idx} style={{ marginTop: '10px' }}>{line.text}</div>;
+              let style = { margin: '10px 0' };
+
+              if (line.type === "Character") {
+                style.textAlign = "center";
+                style.fontWeight = "bold";
+              } else if (line.type === "Parenthetical") {
+                style.textAlign = "center";
+                style.fontStyle = "italic";
+              } else if (line.type === "Dialogue") {
+                style.marginLeft = "100px";
+                style.marginRight = "100px";
               }
+
+              return (
+                <div key={idx} style={style}>
+                  {line.text}
+                </div>
+              );
             })}
+            <div style={{ marginTop: '20px' }}>
+              <button onClick={handleNext}>Next Scene</button>
+            </div>
           </div>
-          <div style={{ marginTop: '20px' }}>
-            <button onClick={handlePrevious}>Previous</button>
-            <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
