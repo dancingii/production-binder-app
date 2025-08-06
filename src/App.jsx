@@ -16,7 +16,7 @@ export default function App() {
 
     const xml = await file.text();
 
-   try {
+try {
   const parsed = await parseStringPromise(xml);
   const paras = parsed.FinalDraft.Script[0].Content[0].Paragraph;
   const scenesArray = [];
@@ -39,7 +39,7 @@ export default function App() {
 
   setScenes(scenesArray);
   setCharacters(Array.from(charSet));
-  setCurrentIndex(0); // ✅ This line must end with a semicolon
+  setCurrentIndex(0); // ✅ THIS LINE NEEDS A SEMICOLON
 } catch (err) {
   console.error("Parse error:", err);
   alert("Failed to parse file.");
