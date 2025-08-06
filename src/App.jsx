@@ -64,23 +64,7 @@ function App() {
 
       {scenes.length > 0 && (
         <div style={{ display: 'flex', marginTop: '20px' }}>
-          {/* Dropdown */}
-          <div style={{ marginRight: '20px' }}>
-            <select
-              style={{ width: '500px', height: '1000px', fontFamily: 'monospace' }}
-              onChange={(e) => setCurrentIndex(Number(e.target.value))}
-              value={currentIndex}
-              size="50"
-            >
-              {scenes.map((scene, index) => (
-                <option key={index} value={index}>
-                  {index + 1}: {scene.heading}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Slide window and nav buttons container */}
+          {/* Slideshow window + nav */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{
               width: '1000px',
@@ -125,11 +109,27 @@ function App() {
               </div>
             </div>
 
-            {/* Nav buttons aligned to slide window */}
+            {/* Navigation buttons (right aligned below window) */}
             <div style={{ textAlign: 'right', marginTop: '10px' }}>
               <button onClick={handlePrev}>Previous</button>
               <button onClick={handleNext} style={{ marginLeft: '10px' }}>Next</button>
             </div>
+          </div>
+
+          {/* Scene dropdown to the RIGHT of slideshow window */}
+          <div style={{ marginLeft: '20px' }}>
+            <select
+              style={{ width: '500px', height: '1000px', fontFamily: 'monospace' }}
+              onChange={(e) => setCurrentIndex(Number(e.target.value))}
+              value={currentIndex}
+              size="50"
+            >
+              {scenes.map((scene, index) => (
+                <option key={index} value={index}>
+                  {index + 1}: {scene.heading}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}
