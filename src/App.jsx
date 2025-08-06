@@ -100,7 +100,19 @@ function App() {
                   case 'Character':
                     return <p key={index} style={{ textAlign: 'center', fontWeight: 'bold', margin: '10px 0' }}>{block.text}</p>;
                   case 'Dialogue':
-                    return <p key={index} style={{ marginLeft: '100px', marginRight: '100px', textAlign: 'left' }}>{block.text}</p>;
+                    return (
+                      <p
+                        key={index}
+                        style={{
+                          marginLeft: '300px',
+                          marginRight: '300px',
+                          textAlign: 'left',
+                          wordWrap: 'break-word'
+                        }}
+                      >
+                        {block.text}
+                      </p>
+                    );
                   case 'Parenthetical':
                     return <p key={index} style={{ textAlign: 'center', fontStyle: 'italic' }}>({block.text})</p>;
                   case 'Action':
