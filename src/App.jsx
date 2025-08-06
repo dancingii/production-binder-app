@@ -1,3 +1,8 @@
+import { Buffer } from 'buffer';
+import process from 'process';
+
+window.Buffer = Buffer;
+window.process = process;
 import React, { useState } from "react";
 import { xml2js } from "xml-js";
 
