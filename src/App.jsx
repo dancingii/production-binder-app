@@ -15,47 +15,55 @@ function App() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const xmlText = e.target.result;
-      try {
-        const parsed = await parseStringPromise(xmlText);
-        const scriptElements = parsed.FinalDraft.Script[0.Content[0].Paragraph];
+    const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file.name.endsWith('.fdx')) {
+    alert('Please upload a valid .fdx (Final Draft) file.');
+    return;
+  }
 
-        const scenes = [];
-        const charSet = new Set();
-        let currentScene = [];
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const xmlText = e.target.result;
 
-        for (const element of scriptElements) {
-          const type = element.$.Type;
-          const text = element.Text?.[0] || '';
+    try {
+      const parsed = await parseStringPromise(xmlText);
+      const scriptElements = parsed.FinalDraft.Script[0].Content[0].Paragraph;
 
-          if (type === 'Scene Heading') {
-            if (currentScene.length) scenes.push(currentScene);
-            currentScene = [{ type, text }];
-          } else {
-            currentScene.push({ type, text });
-            if (type === 'Character') {
-              charSet.add(text.toUpperCase());
-            }
+      const scenes = [];
+      const charSet = new Set();
+      let currentScene = [];
+
+      for (const element of scriptElements) {
+        const type = element.$.Type;
+        const text = element.Text?.[0] || '';
+
+        if (type === 'Scene Heading') {
+          if (currentScene.length) scenes.push(currentScene);
+          currentScene = [{ type, text }];
+        } else {
+          currentScene.push({ type, text });
+          if (type === 'Character') {
+            charSet.add(text.toUpperCase());
           }
         }
-
-        if (currentScene.length) {
-          scenes.push(currentScene);
-        }
-
-        setScriptData(scenes);
-        setCharacters(Array.from(charSet));
-        setCurrentIndex(0);
-      } catch (err) {
-        console.error('Parse error:', err);
-        alert('Failed to parse file.');
       }
-    };
 
-    reader.readAsText(file);
+      if (currentScene.length) {
+        scenes.push(currentScene);
+      }
+
+      setScriptData(scenes);
+      setCharacters(Array.from(charSet));
+      setCurrentIndex(0);
+    } catch (err) {
+      console.error("Parse error:", err);
+      alert("Failed to parse file.");
+    }
   };
+
+  reader.readAsText(file);
+};
 
   const renderScene = (scene) => {
     return scene.map((item, index) => {
