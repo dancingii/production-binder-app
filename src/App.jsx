@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { XMLParser } from 'fast-xml-parser';
+import React, { useState } from "react";
+import { XMLParser } from "fast-xml-parser";
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "",
+  textNodeName: "text",
+  preserveOrder: true
+});
 
 function App() {
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCharacter, setFilterCharacter] = useState('');
-
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: '',
-    textNodeName: 'text',
-    preserveOrder: true,
-  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCharacter, setFilterCharacter] = useState("");
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -21,110 +21,123 @@ function App() {
     const text = await file.text();
     const parsed = parser.parse(text);
 
-    // Flatten elements under final_draft
-    const elements = parsed.find(el => el.final_draft)?.final_draft || [];
+    let elements = [];
 
-    let scenes = [];
+    // Handle Final Draft .fdx format
+    const fdxRoot = parsed.find((el) => el.FinalDraft)?.FinalDraft;
+    if (fdxRoot?.Content) {
+      elements = fdxRoot.Content;
+    } else {
+      // Fallback for raw final_draft export
+      const altRoot = parsed.find((el) => el.final_draft)?.final_draft;
+      if (altRoot) {
+        elements = altRoot;
+      }
+    }
+
+    const paragraphs = elements
+      .map((el) => el.Paragraph)
+      .filter((el) => el && el.style);
+
+    const groupedScenes = [];
     let currentScene = [];
 
-    for (let node of elements) {
-      const key = Object.keys(node)[0];
-      const element = node[key];
-
-      if (element?.style === 'Scene Heading') {
+    for (let el of paragraphs) {
+      if (el.style === "Scene Heading") {
         if (currentScene.length > 0) {
-          scenes.push(currentScene);
+          groupedScenes.push(currentScene);
         }
-        currentScene = [element];
+        currentScene = [el];
       } else {
-        currentScene.push(element);
+        currentScene.push(el);
       }
     }
 
     if (currentScene.length > 0) {
-      scenes.push(currentScene);
+      groupedScenes.push(currentScene);
     }
 
-    setScenes(scenes);
+    setScenes(groupedScenes);
     setCurrentIndex(0);
   };
 
-  const nextScene = () => {
-    setCurrentIndex((prev) => (prev < filteredScenes.length - 1 ? prev + 1 : prev));
+  const currentScene = scenes[currentIndex] || [];
+
+  const filteredScene = currentScene.filter((el) => {
+    if (filterCharacter && el.style === "Character") {
+      return el.text.toLowerCase().includes(filterCharacter.toLowerCase());
+    }
+    return true;
+  });
+
+  const handleNext = () => {
+    if (currentIndex < scenes.length - 1) setCurrentIndex(currentIndex + 1);
   };
 
-  const prevScene = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  const handlePrev = () => {
+    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
-  const getFilteredScene = (scene) => {
-    return scene.filter(el => {
-      const matchesCharacter =
-        !filterCharacter || el.style !== 'Character' || el.text?.toLowerCase() === filterCharacter.toLowerCase();
-      const matchesSearch =
-        !searchQuery ||
-        (el.text && el.text.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return matchesCharacter && matchesSearch;
-    });
-  };
-
-  const filteredScenes = scenes.map(getFilteredScene).filter(scene => scene.length > 0);
-  const currentScene = filteredScenes[currentIndex] || [];
+  const filteredScenes = searchQuery
+    ? scenes.filter((scene) =>
+        scene.some((el) =>
+          el.text?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      )
+    : scenes;
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h1>Script Viewer</h1>
-      <input type="file" accept=".xml" onChange={handleFileChange} />
-
-      {scenes.length > 0 && (
-        <div style={{ marginTop: '1.5rem' }}>
-          <div>
-            <label>Search: </label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ marginRight: '1rem' }}
-            />
-            <label>Filter by Character: </label>
-            <input
-              type="text"
-              value={filterCharacter}
-              onChange={(e) => setFilterCharacter(e.target.value)}
-            />
+    <div style={{ fontFamily: "monospace", padding: "20px", maxWidth: "800px", margin: "auto" }}>
+      <h1>Production Binder</h1>
+      <input type="file" accept=".fdx,.xml" onChange={handleFileChange} />
+      <br /><br />
+      <input
+        type="text"
+        placeholder="Search scene text..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+      />
+      <input
+        type="text"
+        placeholder="Filter by character..."
+        value={filterCharacter}
+        onChange={(e) => setFilterCharacter(e.target.value)}
+        style={{ width: "100%", padding: "8px", marginBottom: "20px" }}
+      />
+      <div style={{ border: "1px solid #ccc", padding: "20px", minHeight: "300px", backgroundColor: "#fefefe" }}>
+        {filteredScene.map((el, idx) => (
+          <div key={idx} style={{ marginBottom: "10px" }}>
+            {el.style === "Character" && (
+              <div style={{ fontWeight: "bold", textAlign: "center" }}>{el.text}</div>
+            )}
+            {el.style === "Dialogue" && (
+              <div style={{ textAlign: "center" }}>{el.text}</div>
+            )}
+            {el.style === "Scene Heading" && (
+              <div style={{ fontWeight: "bold", textTransform: "uppercase" }}>{el.text}</div>
+            )}
+            {el.style === "Action" && (
+              <div style={{ fontStyle: "italic" }}>{el.text}</div>
+            )}
+            {el.style !== "Character" &&
+              el.style !== "Dialogue" &&
+              el.style !== "Scene Heading" &&
+              el.style !== "Action" && <div>{el.text}</div>}
           </div>
-
-          <div style={{ marginTop: '1.5rem', whiteSpace: 'pre-wrap' }}>
-            {currentScene.map((el, i) => (
-              <div key={i} style={{ marginBottom: '1rem' }}>
-                {el.style === 'Scene Heading' && <h3>{el.text}</h3>}
-                {el.style === 'Action' && <p><strong>{el.text}</strong></p>}
-                {el.style === 'Character' && <p style={{ textAlign: 'center', fontWeight: 'bold' }}>{el.text}</p>}
-                {el.style === 'Parenthetical' && <p style={{ textAlign: 'center' }}>({el.text})</p>}
-                {el.style === 'Dialogue' && <p style={{ textAlign: 'center' }}>{el.text}</p>}
-                {el.style === 'Transition' && <p style={{ textAlign: 'right', fontStyle: 'italic' }}>{el.text}</p>}
-                {![
-                  'Scene Heading',
-                  'Action',
-                  'Character',
-                  'Parenthetical',
-                  'Dialogue',
-                  'Transition',
-                ].includes(el.style) && <p>{el.text}</p>}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ marginTop: '2rem' }}>
-            <button onClick={prevScene} disabled={currentIndex === 0}>Previous</button>
-            <span style={{ margin: '0 1rem' }}>
-              Scene {currentIndex + 1} of {filteredScenes.length}
-            </span>
-            <button onClick={nextScene} disabled={currentIndex >= filteredScenes.length - 1}>Next</button>
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
+      <div style={{ marginTop: "20px" }}>
+        <button onClick={handlePrev} disabled={currentIndex === 0}>
+          Previous
+        </button>
+        <span style={{ margin: "0 10px" }}>
+          Scene {currentIndex + 1} of {scenes.length}
+        </span>
+        <button onClick={handleNext} disabled={currentIndex === scenes.length - 1}>
+          Next
+        </button>
+      </div>
     </div>
   );
 }
