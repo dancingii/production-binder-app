@@ -12,18 +12,18 @@ function Script({ scenes, currentIndex, setCurrentIndex, handleFileUpload }) {
 
       <div style={{ display: 'flex', flexDirection: 'row' }}>
         <div
-          style={{
-            width: '1000px',
-            height: '1000px',
-            overflowY: 'auto',
-            border: '1px solid #ccc',
-            padding: '20px',
-            backgroundColor: '#fff',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-            boxSizing: 'border-box',
-            textAlign: 'left',
-            fontFamily: 'monospace',
-          }}
+  style={{
+    width: '1000px',
+    height: '1000px',
+    overflowY: 'auto',
+    border: '1px solid #ccc',
+    padding: '20px',
+    backgroundColor: '#fff',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+    boxSizing: 'border-box',
+    textAlign: 'left',
+    fontFamily: 'Courier, monospace', // ✅ Added line
+  }}
         >
           <Slideshow scenes={scenes} currentIndex={currentIndex} />
         </div>
