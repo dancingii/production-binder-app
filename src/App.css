@@ -1,5 +1,76 @@
-/* src/App.css */
-body {
-  margin: 0;
-  padding: 0;
+.app-container {
+  display: flex;
+  height: 100vh;
+  font-family: monospace;
+}
+
+.sidebar {
+  width: 80px;
+  background-color: #ffefd5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.nav-button {
+  background: none;
+  border: none;
+  margin: 5px 0;
+  font-size: 12px;
+  cursor: pointer;
+  color: #333;
+}
+
+.nav-button.active {
+  font-weight: bold;
+  color: #000;
+}
+
+.main {
+  flex-grow: 1;
+  padding: 20px;
+}
+
+.slide-window {
+  width: 1000px;
+  height: 1000px;
+  overflow-y: auto;
+  margin: 20px 0;
+  border: 1px solid #ccc;
+  padding: 20px;
+  background-color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.slide-content {
+  margin-top: 20px;
+}
+
+.character {
+  text-align: center;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.dialogue {
+  margin-left: 100px;
+  margin-right: 100px;
+  text-align: left;
+}
+
+.parenthetical {
+  text-align: center;
+  font-style: italic;
+  margin: 5px 0;
+}
+
+.action {
+  text-align: left;
+  margin: 5px 0;
+}
+
+.navigation-buttons {
+  text-align: right;
+  margin-top: 20px;
 }
