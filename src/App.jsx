@@ -1,139 +1,10 @@
 import React, { useState } from 'react';
-
-// Modules
-function Script({ scenes, currentIndex, setCurrentIndex, handleFileUpload }) {
-  const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % scenes.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'row' }}>
-      {/* Slideshow Window */}
-      <div
-        style={{
-          width: '1000px',
-          height: '1000px',
-          overflowY: 'auto',
-          border: '1px solid #ccc',
-          padding: '20px',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-          boxSizing: 'border-box',
-          textAlign: 'left',
-        }}
-      >
-        {scenes.length === 0 ? (
-          <div style={{ fontStyle: 'italic' }}>No project loaded. Please upload a .fdx file to begin.</div>
-        ) : (
-          <>
-            <h2 style={{ marginBottom: '20px' }}>
-              {currentIndex + 1}: {scenes[currentIndex].heading}
-            </h2>
-            <div>
-              {scenes[currentIndex].content.map((block, index) => {
-                switch (block.type) {
-                  case 'Character':
-                    return (
-                      <p
-                        key={index}
-                        style={{
-                          textAlign: 'center',
-                          fontWeight: 'bold',
-                          margin: '10px 0',
-                        }}
-                      >
-                        {block.text}
-                      </p>
-                    );
-                  case 'Dialogue':
-                    return (
-                      <p
-                        key={index}
-                        style={{
-                          marginLeft: '300px',
-                          marginRight: '300px',
-                          textAlign: 'left',
-                        }}
-                      >
-                        {block.text}
-                      </p>
-                    );
-                  case 'Parenthetical':
-                    return (
-                      <p
-                        key={index}
-                        style={{
-                          textAlign: 'center',
-                          fontStyle: 'italic',
-                          margin: '10px 0',
-                        }}
-                      >
-                        ({block.text})
-                      </p>
-                    );
-                  case 'Action':
-                    return (
-                      <p key={index} style={{ textAlign: 'left' }}>
-                        {block.text}
-                      </p>
-                    );
-                  default:
-                    return <p key={index}>{block.text}</p>;
-                }
-              })}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Scene Dropdown */}
-      {scenes.length > 0 && (
-        <div style={{ marginLeft: '20px', height: '1000px' }}>
-          <select
-            style={{ height: '1000px', width: '500px' }}
-            value={currentIndex}
-            onChange={(e) => setCurrentIndex(Number(e.target.value))}
-            size={20}
-          >
-            {scenes.map((scene, index) => (
-              <option key={index} value={index}>
-                {index + 1}: {scene.heading}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Stripboard() {
-  return <div style={{ padding: '20px' }}>Stripboard Module Coming Soon</div>;
-}
-function StripboardSchedule() {
-  return <div style={{ padding: '20px' }}>Stripboard Schedule Module Coming Soon</div>;
-}
-function CallSheet() {
-  return <div style={{ padding: '20px' }}>Call Sheet Module Coming Soon</div>;
-}
-function ToDoList() {
-  return <div style={{ padding: '20px' }}>To-Do List Module Coming Soon</div>;
-}
-function Props() {
-  return <div style={{ padding: '20px' }}>Props Module Coming Soon</div>;
-}
-function Wardrobe() {
-  return <div style={{ padding: '20px' }}>Wardrobe Module Coming Soon</div>;
-}
+import './App.css'; // If you have global styles
 
 function App() {
+  const [activeModule, setActiveModule] = useState('Script');
   const [scenes, setScenes] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeModule, setActiveModule] = useState('Script');
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -168,7 +39,6 @@ function App() {
         });
 
         if (currentScene) parsedScenes.push(currentScene);
-
         setScenes(parsedScenes);
         setCurrentIndex(0);
       } catch (err) {
@@ -180,85 +50,182 @@ function App() {
     reader.readAsText(file);
   };
 
-  const renderModule = () => {
-    switch (activeModule) {
-      case 'Script':
-        return (
-          <>
-            <div style={{ margin: '20px' }}>
-              <input type="file" accept=".fdx" onChange={handleFileUpload} />
-            </div>
-            <Script
-              scenes={scenes}
-              currentIndex={currentIndex}
-              setCurrentIndex={setCurrentIndex}
-              handleFileUpload={handleFileUpload}
-            />
-            {scenes.length > 0 && (
-              <div style={{ textAlign: 'right', marginTop: '10px', width: '1000px' }}>
-                <button onClick={() => setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length)}>
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentIndex((prev) => (prev + 1) % scenes.length)}
-                  style={{ marginLeft: '10px' }}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        );
-      case 'Stripboard':
-        return <Stripboard />;
-      case 'StripboardSchedule':
-        return <StripboardSchedule />;
-      case 'CallSheet':
-        return <CallSheet />;
-      case 'ToDoList':
-        return <ToDoList />;
-      case 'Props':
-        return <Props />;
-      case 'Wardrobe':
-        return <Wardrobe />;
-      default:
-        return <div>Invalid Module</div>;
-    }
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % scenes.length);
   };
 
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + scenes.length) % scenes.length);
+  };
+
+  const handleSceneSelect = (event) => {
+    setCurrentIndex(Number(event.target.value));
+  };
+
+  const navItems = [
+    'Script',
+    'Stripboard',
+    'Schedule',
+    'Call Sheet',
+    'To-Do',
+    'Props',
+    'Wardrobe',
+  ];
+
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
-      {/* Left Nav */}
+    <div style={{ display: 'flex', fontFamily: 'Courier, monospace' }}>
+      {/* Left navigation bar */}
       <div
         style={{
           width: '80px',
-          backgroundColor: '#FFE5B4',
-          paddingTop: '10px',
-          fontFamily: 'monospace',
+          backgroundColor: '#ffe0b3',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          paddingTop: '10px',
         }}
       >
-        {['Script', 'Stripboard', 'StripboardSchedule', 'CallSheet', 'ToDoList', 'Props', 'Wardrobe'].map((mod) => (
+        {navItems.map((item) => (
           <button
-            key={mod}
-            onClick={() => setActiveModule(mod)}
+            key={item}
+            onClick={() => setActiveModule(item)}
             style={{
-              margin: '5px 0',
-              backgroundColor: activeModule === mod ? '#ddd' : 'transparent',
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              margin: '10px 0',
+              backgroundColor: activeModule === item ? '#ccc' : 'transparent',
               border: 'none',
               cursor: 'pointer',
-              fontWeight: activeModule === mod ? 'bold' : 'normal',
+              color: '#333',
+              fontFamily: 'monospace',
             }}
           >
-            {mod}
+            {item}
           </button>
         ))}
       </div>
 
-      {/* Main Display */}
-      <div style={{ flexGrow: 1, padding: '10px' }}>{renderModule()}</div>
+      {/* Main content area */}
+      <div style={{ flex: 1, padding: '20px' }}>
+        {activeModule === 'Script' && (
+          <div>
+            <h1>Scene Viewer</h1>
+            <input type="file" accept=".fdx" onChange={handleFileUpload} />
+
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+              {/* Dropdown menu on the right */}
+              {scenes.length > 0 && (
+                <select
+                  size="1000"
+                  value={currentIndex}
+                  onChange={handleSceneSelect}
+                  style={{
+                    width: '500px',
+                    height: '1000px',
+                    marginLeft: '20px',
+                    fontFamily: 'Courier, monospace',
+                    overflowY: 'scroll',
+                    whiteSpace: 'pre',
+                  }}
+                >
+                  {scenes.map((scene, index) => (
+                    <option key={index} value={index}>
+                      <strong>{index + 1}</strong>:   {scene.heading}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* Slideshow window */}
+              {scenes.length > 0 && (
+                <div
+                  style={{
+                    width: '1000px',
+                    height: '1000px',
+                    margin: '20px 0',
+                    border: '1px solid #ccc',
+                    padding: '20px',
+                    overflowY: 'auto',
+                    backgroundColor: '#fff',
+                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                    fontFamily: 'Courier, monospace',
+                  }}
+                >
+                  <h2 style={{ textAlign: 'left', marginBottom: '20px' }}>
+                    {currentIndex + 1}: {scenes[currentIndex].heading}
+                  </h2>
+                  <div>
+                    {scenes[currentIndex].content.map((block, index) => {
+                      switch (block.type) {
+                        case 'Character':
+                          return (
+                            <p
+                              key={index}
+                              style={{
+                                textAlign: 'center',
+                                fontWeight: 'bold',
+                                margin: '10px 0',
+                              }}
+                            >
+                              {block.text}
+                            </p>
+                          );
+                        case 'Dialogue':
+                          return (
+                            <p
+                              key={index}
+                              style={{
+                                marginLeft: '300px',
+                                marginRight: '300px',
+                                textAlign: 'left',
+                              }}
+                            >
+                              {block.text}
+                            </p>
+                          );
+                        case 'Parenthetical':
+                          return (
+                            <p
+                              key={index}
+                              style={{
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                                margin: '10px 0',
+                              }}
+                            >
+                              ({block.text})
+                            </p>
+                          );
+                        case 'Action':
+                          return (
+                            <p key={index} style={{ textAlign: 'left' }}>
+                              {block.text}
+                            </p>
+                          );
+                        default:
+                          return <p key={index}>{block.text}</p>;
+                      }
+                    })}
+                  </div>
+                  <div style={{ textAlign: 'right', marginTop: '20px' }}>
+                    <button onClick={handlePrev}>Previous</button>
+                    <button onClick={handleNext} style={{ marginLeft: '10px' }}>
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Placeholder for other modules */}
+        {activeModule !== 'Script' && (
+          <h2 style={{ color: '#888' }}>
+            {activeModule} module coming soon...
+          </h2>
+        )}
+      </div>
     </div>
   );
 }
